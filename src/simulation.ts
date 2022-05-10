@@ -1,33 +1,61 @@
-import { vec2angle, vec2create, vec2dist, vec2length, vec2sub } from '@trufi/utils';
+import { vec2angle, vec2create, vec2dist, vec2sub } from '@trufi/utils';
 
 type Vec = number[];
 
 export interface Obj {
     position: Vec;
-    velocity: Vec;
+    maxVelocity: number;
+    targetPosition: Vec;
     radius: number;
     name: string;
-
-    chosedVelocity: Vec;
+    velocity: Vec;
+    potentialVelocities: number[][];
+    checkedVelocities: Array<{ velocity: number[]; ok: boolean }>;
+    rvo: boolean;
 }
 
-export function createObj(name: string, position: Vec, velocity: Vec, radius: number): Obj {
-    return { name, position, velocity, radius, chosedVelocity: [0, 0] };
+export function createObj(
+    name: string,
+    position: Vec,
+    maxVelocity: number,
+    targetPosition: Vec,
+    radius: number,
+    rvo = true,
+): Obj {
+    return {
+        name,
+        position,
+        maxVelocity,
+        targetPosition,
+        radius,
+        velocity: [0, 0],
+        potentialVelocities: [],
+        checkedVelocities: [],
+        rvo,
+    };
 }
 
 export function update(objects: Obj[], dt: number) {
     for (const a of objects) {
-        updateObj(a, objects, dt);
+        if (a.rvo) {
+            updateObj(a, objects);
+        } else {
+            const velocities = velocitiesSample(a);
+            a.potentialVelocities = velocities;
+            a.velocity = velocities[0];
+        }
+    }
+
+    for (const a of objects) {
+        updatePosition(a, dt);
     }
 }
 
-function updateObj(a: Obj, objects: Obj[], dt: number) {
-    // updatePosition(a, a.velocity, dt);
-    // return;
-
+function updateObj(a: Obj, objects: Obj[]) {
     const velocities = velocitiesSample(a);
+    a.potentialVelocities = velocities;
 
-    // a.chosedVelocity = velocities[0];
+    a.checkedVelocities = [];
 
     for (const b of objects) {
         if (a === b) {
@@ -35,35 +63,44 @@ function updateObj(a: Obj, objects: Obj[], dt: number) {
         }
 
         for (const potentialVelocity of velocities) {
-            if (!inRVO(potentialVelocity, a, b)) {
-                a.chosedVelocity = potentialVelocity;
-                updatePosition(a, potentialVelocity, dt);
+            const withinRVO = inRVO(potentialVelocity, a, b);
+
+            a.checkedVelocities.push({ velocity: potentialVelocity, ok: !withinRVO });
+
+            if (!withinRVO) {
+                a.velocity = potentialVelocity;
                 return;
             }
         }
     }
 }
 
-function updatePosition(a: Obj, finalVelocity: Vec, dt: number) {
-    a.position[0] = a.position[0] + finalVelocity[0] * dt;
-    a.position[1] = a.position[1] + finalVelocity[1] * dt;
+function updatePosition(a: Obj, dt: number) {
+    a.position[0] = a.position[0] + a.velocity[0] * dt;
+    a.position[1] = a.position[1] + a.velocity[1] * dt;
 }
 
 function velocitiesSample(a: Obj) {
-    const n = 8;
-    const rn = 3;
+    const n = 5;
+    const rn = 2;
 
-    const maxVelocity = vec2length(a.velocity);
-    const direction = vec2angle(a.velocity);
-
+    const directionVec = vec2create();
+    vec2sub(directionVec, a.targetPosition, a.position);
+    const direction = vec2angle(directionVec);
     const result: number[][] = [];
 
     for (let i = 0; i < n; i++) {
-        const angle = direction + ((Math.PI * 2) / n) * i;
+        const angle = (Math.PI / n) * i;
         for (let r = rn; r > 0; r--) {
-            const radius = (maxVelocity * r) / rn;
-            const position = [radius * Math.cos(angle), radius * Math.sin(angle)];
-            result.push(position);
+            const radius = (a.maxVelocity * r) / rn;
+
+            const rightAngle = direction + angle;
+            result.push([radius * Math.cos(rightAngle), radius * Math.sin(rightAngle)]);
+
+            if (i > 0) {
+                const leftAngle = direction - angle;
+                result.push([radius * Math.cos(leftAngle), radius * Math.sin(leftAngle)]);
+            }
         }
     }
     return result;
