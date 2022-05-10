@@ -21,7 +21,7 @@
         "test": "npm run prettier && npm run build"
     },
     "dependencies": {
-        "@trufi/utils": "^0.0.10",
+        "@trufi/utils": "^0.0.11",
         "dat.gui": "^0.7.9",
         "tslib": "^2.4.0"
     },

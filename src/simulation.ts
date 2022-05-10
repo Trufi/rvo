@@ -1,4 +1,4 @@
-import { vec2angle, vec2copy, vec2create, vec2dist, vec2sub } from '@trufi/utils';
+import { vec2angle, vec2copy, vec2create, vec2dist, vec2rotation, vec2sub } from '@trufi/utils';
 import type { Config } from '.';
 
 type Vec = number[];
@@ -49,7 +49,7 @@ export function simulate(objects: Obj[], dt: number, config: Config) {
         }
 
         if (a.rvo) {
-            updateObj(a, objects, dt, config);
+            updateObj(a, objects, config);
         } else {
             const velocities = velocitiesSample(a);
             a.potentialVelocities = velocities;
@@ -69,7 +69,7 @@ export function simulate(objects: Obj[], dt: number, config: Config) {
     }
 }
 
-function updateObj(a: Obj, objects: Obj[], dt: number, config: Config) {
+function updateObj(a: Obj, objects: Obj[], config: Config) {
     const velocities = velocitiesSample(a);
 
     a.potentialVelocities = velocities;
@@ -111,7 +111,7 @@ function velocitiesSample(a: Obj) {
 
     const directionVec = vec2create();
     vec2sub(directionVec, a.targetPosition, a.position);
-    const direction = vec2angle(directionVec);
+    const direction = vec2rotation(directionVec);
     const result: number[][] = [];
 
     for (let i = 0; i <= n; i++) {
@@ -139,24 +139,11 @@ function inRVO(potentialVelocityA: Vec, a: Obj, b: Obj) {
 
     const relativeVelocity = [0, 0];
     vec2sub(relativeVelocity, potentialVelocityA, b.velocity);
-    const alpha = Math.abs(angle(relativeVelocity, dirAtoB));
+    const alpha = Math.abs(vec2angle(relativeVelocity, dirAtoB));
 
     const dist = vec2dist(a.position, b.position);
 
     const maxAngle = dist > radius ? Math.abs(Math.asin(radius / dist)) : Math.PI * 0.5;
 
     return alpha <= maxAngle;
-}
-
-function angle(a: number[], b: number[]) {
-    let x1 = a[0];
-    let y1 = a[1];
-    let x2 = b[0];
-    let y2 = b[1];
-    // mag is the product of the magnitudes of a and b
-    let mag = Math.sqrt((x1 * x1 + y1 * y1) * (x2 * x2 + y2 * y2));
-    // mag &&.. short circuits if mag == 0
-    let cosine = mag && (x1 * x2 + y1 * y2) / mag;
-    // Math.min(Math.max(cosine, -1), 1) clamps the cosine between -1 and 1
-    return Math.acos(Math.min(Math.max(cosine, -1), 1));
 }
