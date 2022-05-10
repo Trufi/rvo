@@ -21,7 +21,7 @@ jobs:
           npm ci
           npm run build
           mkdir public
-          cp -r dist public
+          cp -r dist/* public
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@4.1.4
