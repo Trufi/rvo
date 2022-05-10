@@ -15,7 +15,7 @@
     "license": "MIT",
     "scripts": {
         "start": "npm run dev",
-        "build": "parcel build",
+        "build": "parcel build --public-url .",
         "dev": "parcel",
         "prettier": "prettier --check \"./**/*.{ts,tsx,js,json,html,css}\"",
         "test": "npm run prettier && npm run build"
