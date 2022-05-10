@@ -53,24 +53,29 @@ export function update(objects: Obj[], dt: number) {
 
 function updateObj(a: Obj, objects: Obj[]) {
     const velocities = velocitiesSample(a);
+
     a.potentialVelocities = velocities;
-
     a.checkedVelocities = [];
+    a.velocity = [0, 0];
 
-    for (const b of objects) {
-        if (a === b) {
-            continue;
+    for (const potentialVelocity of velocities) {
+        let ok = true;
+        for (const b of objects) {
+            if (a === b) {
+                continue;
+            }
+            const withinRVO = inRVO(potentialVelocity, a, b);
+            if (withinRVO) {
+                ok = false;
+                break;
+            }
         }
 
-        for (const potentialVelocity of velocities) {
-            const withinRVO = inRVO(potentialVelocity, a, b);
+        a.checkedVelocities.push({ velocity: potentialVelocity, ok });
 
-            a.checkedVelocities.push({ velocity: potentialVelocity, ok: !withinRVO });
-
-            if (!withinRVO) {
-                a.velocity = potentialVelocity;
-                return;
-            }
+        if (ok) {
+            a.velocity = potentialVelocity;
+            return;
         }
     }
 }
