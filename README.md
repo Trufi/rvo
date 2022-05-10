@@ -1,5 +1,7 @@
-# Typescript Boilerplate
+# Reciprocal Velocity Obstacles
 
-Boilerplate for projects with typescript and webpack.
+Example of Reciprocal Velocity Obstacles implementation on JavaScript (work on progress).
 
-[Demo](https://trufi.github.io/typescript-boilerplate/)
+Reference https://gamma.cs.unc.edu/RVO/icra2008.pdf
+
+[Demo](https://trufi.github.io/rvo/)
