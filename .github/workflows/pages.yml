@@ -20,6 +20,7 @@ jobs:
         run: |
           npm ci
           npm run build
+          mkdir public
           cp -r dist public
 
       - name: Deploy 🚀
